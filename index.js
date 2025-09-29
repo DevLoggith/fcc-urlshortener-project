@@ -24,9 +24,16 @@ app.get("/", function (req, res) {
 });
 
 app.post("/api/shorturl", (req, res) => {
+	// validate that the POSTED url matches the https://www.example.com format
+	// (required: 'http://' or 'https://', optional: subdomain, required: top-level domain)
+		// if not, res.json({error: "Invalid URL"})
+	// validate that the url resolves to an actual site
+		// if not, res.json({error:	"Invalid Hostname"})
+
 	// search db to see if req.body.url already exists
 	// if so, return json of that document
-	// in not, create new Url document and save it
+	// if not, create new Url document and save it
+
 	const url = new Url ({
 		original_url: req.body.url,
 		short_url: nanoid(5)
@@ -40,8 +47,10 @@ app.post("/api/shorturl", (req, res) => {
 	}
 });
 
-app.get("/api/shorturl/:surl", (req, res) => {
-
+app.get("/api/shorturl/:nanourl", (req, res) => {
+	// search db to see if nanourl already exists
+	// if so, navigate to the url stored under 'original_url' of that document
+	// if not, res.json({error: "No short URL found for the given input"})
 });
 
 app.listen(port, function () {
