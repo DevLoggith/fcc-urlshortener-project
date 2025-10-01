@@ -1,11 +1,12 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const {nanoid} = require("nanoid");
+// const { nanoid } = require("nanoid");
 let bodyParser = require("body-parser");
+const dns = require("dns").promises;
 
 const connectDB = require("./db");
-const Url = require("./schemas");
+const UrlDoc = require("./schemas");
 
 const app = express();
 connectDB();
@@ -17,33 +18,43 @@ app.use(cors());
 
 app.use("/public", express.static(`${process.cwd()}/public`));
 
-app.use("/", bodyParser.urlencoded({extended: false}));
+app.use("/", bodyParser.urlencoded({ extended: false }));
 
 app.get("/", function (req, res) {
 	res.sendFile(process.cwd() + "/views/index.html");
 });
 
-app.post("/api/shorturl", (req, res) => {
-	// validate that the POSTED url matches the https://www.example.com format
-	// (required: 'http://' or 'https://', optional: subdomain, required: top-level domain)
-		// if not, res.json({error: "Invalid URL"})
-	// validate that the url resolves to an actual site
-		// if not, res.json({error:	"Invalid Hostname"})
+app.post("/api/shorturl", async (req, res) => {
+	// check that the URL is in valid format
+	if (!URL.canParse(req.body.url)) {
+		return res.json({ error: "invalid url" });
+	}
 
-	// search db to see if req.body.url already exists
-	// if so, return json of that document
-	// if not, create new Url document and save it
-
-	const url = new Url ({
-		original_url: req.body.url,
-		short_url: nanoid(5)
-	});
+	// check that the URL resolves to an actual site
+	try {
+		urlObject = new URL(req.body.url);
+		await dns.lookup(urlObject.hostname);
+	} catch (err) {
+		return res.json({ error: "invalid hostname" });
+	}
 
 	try {
-		url.save();
-		res.status(201).json(url);
+		// search db for inputted URL (minus the id and doc version fields)
+		const existingDoc = await UrlDoc.findOne({original_url: req.body.url}).select("-_id -__v");
+		if (existingDoc) {
+			return res.json(existingDoc);
+		}
+
+		const url = new UrlDoc({
+			original_url: req.body.url,
+			short_url: Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000
+		});
+
+		const savedURL = await url.save();
+
+		res.status(201).json({original_url: savedURL.original_url, short_url: savedURL.short_url});
 	} catch (err) {
-		res.status(400).json({message: err.message});
+		res.status(400).json({ message: err.message });
 	}
 });
 
