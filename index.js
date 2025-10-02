@@ -35,7 +35,7 @@ app.post("/api/shorturl", async (req, res) => {
 		urlObject = new URL(req.body.url);
 		await dns.lookup(urlObject.hostname);
 	} catch (err) {
-		return res.json({ error: "invalid hostname" });
+		return res.json({ error: "invalid url" });
 	}
 
 	try {
