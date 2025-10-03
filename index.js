@@ -8,6 +8,7 @@ const dns = require("dns").promises;
 const connectDB = require("./db");
 const UrlDoc = require("./schemas");
 
+
 const app = express();
 connectDB();
 
@@ -30,9 +31,13 @@ app.post("/api/shorturl", async (req, res) => {
 		return res.json({ error: "invalid url" });
 	}
 
+	const urlObject = new URL(req.body.url);
+    if (urlObject.protocol != "http:" && urlObject.protocol != "https:") {
+        return res.json({ error: "invalid url" });
+    }
+
 	// check that the URL resolves to an actual site
 	try {
-		urlObject = new URL(req.body.url);
 		await dns.lookup(urlObject.hostname);
 	} catch (err) {
 		return res.json({ error: "invalid url" });
@@ -58,10 +63,17 @@ app.post("/api/shorturl", async (req, res) => {
 	}
 });
 
-app.get("/api/shorturl/:nanourl", (req, res) => {
-	// search db to see if nanourl already exists
-	// if so, navigate to the url stored under 'original_url' of that document
-	// if not, res.json({error: "No short URL found for the given input"})
+app.get("/api/shorturl/:nanourl", async (req, res) => {
+	if (req.params.nanourl.length !== 5) {
+		return res.json({error: "Short URL needs to be 5 characters long"})
+	}
+
+	const existingDoc = await UrlDoc.findOne({short_url: req.params.nanourl})
+	if (existingDoc) {
+		return res.redirect(existingDoc.original_url);
+	} else {
+		return res.json({error: "No short URL found for the given input"});
+	}
 });
 
 app.listen(port, function () {
