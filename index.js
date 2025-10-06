@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-// const { nanoid } = require("nanoid");
 let bodyParser = require("body-parser");
 const dns = require("dns").promises;
 
@@ -39,7 +38,7 @@ app.post("/api/shorturl", async (req, res) => {
 	try {
 		await dns.lookup(urlObject.hostname);
 	} catch (err) {
-		return res.json({ error: "invalid url" });
+		return res.json({ message: err.message });
 	}
 
 	try {
@@ -53,7 +52,7 @@ app.post("/api/shorturl", async (req, res) => {
 
 		const url = new UrlDoc({
 			original_url: req.body.url,
-			short_url: Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000,
+			short_url: Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000
 		});
 
 		const savedURL = await url.save();
