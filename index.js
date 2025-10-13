@@ -7,21 +7,19 @@ const dns = require("dns").promises;
 const connectDB = require("./db");
 const UrlDoc = require("./schemas");
 
-const app = express();
-connectDB();
 
 // Basic Configuration
+const app = express();
 const port = process.env.PORT || 3000;
+connectDB();
 
 app.use(cors());
-
 app.use("/public", express.static(`${process.cwd()}/public`));
-
 app.use("/", bodyParser.urlencoded({ extended: false }));
-
 app.get("/", function (req, res) {
 	res.sendFile(process.cwd() + "/views/index.html");
 });
+
 
 app.post("/api/shorturl", async (req, res) => {
 	// check that the URL is in valid format
@@ -86,6 +84,7 @@ app.get("/api/shorturl/:nanourl", async (req, res) => {
 		res.status(400).json({ message: err.message });
 	}
 });
+
 
 app.listen(port, function () {
 	console.log(`Listening on port ${port}`);
